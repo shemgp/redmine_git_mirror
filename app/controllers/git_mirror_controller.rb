@@ -15,6 +15,36 @@ class GitMirrorController < ActionController::Base
     head found ? 202 : 404
   end
 
+  # process gitea webhook request
+  def gitea
+    unless request.post?
+      head 400
+      return
+    end
+
+    repository = params[:repository]
+    unless repository
+      head 422
+      return
+    end
+
+    urls = []
+
+    [:ssh_url].each do |p|
+      url = repository[p].to_s
+
+      urls.push(url) if url.length > 0
+    end
+
+    if urls.length <= 0
+      head 422
+      return
+    end
+
+    found = fetch_by_urls(urls)
+    head found ? 202 : 404
+  end
+
   # process gitlab webhook request
   def gitlab
     event = params[:event_name]
