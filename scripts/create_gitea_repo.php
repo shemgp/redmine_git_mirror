@@ -307,8 +307,8 @@ function add_collaborators( $owner, $repo, array $users )
 if (count($_SERVER['argv']) < 3) {
     echo "need: <redmine_project> <org/repo> [users1,user2,user3]";
 }
-$repo = $_SERVER['argv'][1];
-$project = $_SERVER['argv'][2];
+$project = $_SERVER['argv'][1];
+$repo = $_SERVER['argv'][2];
 $users = [];
 if (isset($_SERVER['argv'][3])) {
     $users = explode(",", $_SERVER['argv'][3]);
