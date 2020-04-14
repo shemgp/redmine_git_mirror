@@ -2,14 +2,12 @@
 
 define('SETTINGS_FILE', '/etc/redmine/gitea.ini');
 
-if (file_exists(SETTINGS_FILE))
-{
+if (file_exists(SETTINGS_FILE)) {
     $s = parse_ini_file(SETTINGS_FILE);
     $needed = ['api_url', 'redmine_url', 'api_token'];
     $have = array_keys($s);
-    $lacking = array_diff($needed,$have);
-    if (count($lacking))
-    {
+    $lacking = array_diff($needed, $have);
+    if (count($lacking)) {
         echo "Lacking ini keys: ".join(", ", $lacking)."\n";
         die();
     }
@@ -95,11 +93,12 @@ function rest($method, $url, $data=[])
 /**
  * Do the creation of gitea repo
  *
- * @param mixed $path
- * @param mixed $users
+ * @param  string $project The redmine project name used in wiki and issues
+ * @param  mixed  $path
+ * @param  mixed  $users
  * @return
  */
-function create_gitea_repo($path, $users=[])
+function create_gitea_repo($project, $path, $users=[])
 {
     $subfolders = explode('/', $path);
     if (count($subfolders) > 2) {
@@ -134,21 +133,20 @@ function create_gitea_repo($path, $users=[])
         } else {
             $has_existing_repo = false;
             $existing_repo = null;
-            foreach($existing_repos as $repo)
-                if ($repo['name'] == $sub)
-                {
+            foreach($existing_repos as $repo) {
+                if ($repo['name'] == $sub) {
                     $has_existing_repo = true;
                     $existing_repo = $repo;
                     break;
                 }
-            if (!$has_existing_repo)
-            {
-//                echo "Creating repo: ";
-//                if ($org)
-//                    echo "$org/$sub";
-//                else
-//                    echo "$sub";
-//                echo ".. ";
+            }
+            if (!$has_existing_repo) {
+                //                echo "Creating repo: ";
+                //                if ($org)
+                //                    echo "$org/$sub";
+                //                else
+                //                    echo "$sub";
+                //                echo ".. ";
                 $existing_repo = create_repository($sub, $org);
                 if (ctype_digit((string) ($existing_repo['id'] ?? ''))) {
                     //echo "done\n";
@@ -160,21 +158,21 @@ function create_gitea_repo($path, $users=[])
             }
             else
             {
-//                echo "Existing repo: ";
-//                if ($org)
-//                    echo "$org/$sub";
-//                else
-//                    echo "$sub";
-//                echo "\n";
+                //                echo "Existing repo: ";
+                //                if ($org)
+                //                    echo "$org/$sub";
+                //                else
+                //                    echo "$sub";
+                //                echo "\n";
             }
 
             $owner = null;
-            if (isset($existing_repo['owner']['username']))
+            if (isset($existing_repo['owner']['username'])) {
                 $owner = $existing_repo['owner']['username'];
-            if ( $existing_repo && $owner )
-            {
+            }
+            if ($existing_repo && $owner ) {
                 //echo "Updating wiki and issues.. ";
-                $response = update_wiki_and_issues($owner, $org??$sub, $sub);
+                $response = update_wiki_and_issues($owner, $project, $sub);
                 if (ctype_digit((string) ($response['id'] ?? ''))) {
                     //echo "done\n";
                 } else {
@@ -187,7 +185,7 @@ function create_gitea_repo($path, $users=[])
                 add_collaborators($owner, $sub, $users);
                 //echo "done\n";
 
-                return array_merge( $existing_repo, $response );
+                return array_merge($existing_repo, $response);
             }
         }//end if
 
@@ -199,7 +197,7 @@ function create_gitea_repo($path, $users=[])
 /**
  * Create an organization in gitea
  *
- * @param mixed $sub
+ * @param  mixed $sub
  * @return
  */
 function create_organization($sub)
@@ -222,8 +220,8 @@ function create_organization($sub)
 /**
  * Create a repository in gitea
  *
- * @param mixed $sub
- * @param mixed $org
+ * @param  mixed $sub
+ * @param  mixed $org
  * @return
  */
 function create_repository($sub, $org=null)
@@ -253,11 +251,12 @@ function create_repository($sub, $org=null)
 /**
  * Update wiki and issues of a gitea repo to point to Redmine
  *
- * @param mixed $owner
- * @param mixed $repo
+ * @param  mixed  $owner
+ * @param  string $project
+ * @param  mixed  $repo
  * @return
  */
-function update_wiki_and_issues ($owner, $project, $repo)
+function update_wiki_and_issues($owner, $project, $repo)
 {
     $data = [
         'has_issues' => true,
@@ -286,33 +285,34 @@ function update_wiki_and_issues ($owner, $project, $repo)
  * Add collaborators to gitea
  * Note: Don't sync or delete as we can add manually in gitea
  *
- * @param mixed $owner
- * @param mixed $repo
- * @param array $users
+ * @param  mixed $owner
+ * @param  mixed $repo
+ * @param  array $users
  * @return
  */
 function add_collaborators( $owner, $repo, array $users )
 {
-    if (count($users) == 0)
+    if (count($users) == 0) {
         return null;
+    }
 
     $data = [
         "permission" => "write"
     ];
-    foreach($users as $user)
+    foreach($users as $user) {
         rest('PUT', API_URL.'/repos/'.$owner.'/'.$repo.'/collaborators/'.$user, $data);
+    }
 }
 
-if (count($_SERVER['argv']) < 2)
-{
-    echo "need: <org/repo> [users1,user2,user3]";
+if (count($_SERVER['argv']) < 3) {
+    echo "need: <redmine_project> <org/repo> [users1,user2,user3]";
 }
 $repo = $_SERVER['argv'][1];
+$project = $_SERVER['argv'][2];
 $users = [];
-if (isset($_SERVER['argv'][2]))
-{
-    $users = explode(",", $_SERVER['argv'][2]);
+if (isset($_SERVER['argv'][3])) {
+    $users = explode(",", $_SERVER['argv'][3]);
 }
-$result = create_gitea_repo($repo, $users);
+$result = create_gitea_repo($project, $repo, $users);
 echo $result['ssh_url'];
 
