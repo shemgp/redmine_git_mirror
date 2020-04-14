@@ -132,6 +132,8 @@ function create_gitea_repo($project, $path, $users=[])
             }
         } else {
             $has_existing_repo = false;
+            if (count($subfolders) - 1 == 1)
+                $existing_repos = rest('GET', API_URL.'/user/repos');
             $existing_repo = null;
             foreach($existing_repos as $repo) {
                 if ($repo['name'] == $sub) {
