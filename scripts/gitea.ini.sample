@@ -1,0 +1,4 @@
+# Put me in /etc/redmine/
+api_url=https://git.aiias.edu/api/v1
+redmine_url=https://development.aiias.edu
+api_token=secret

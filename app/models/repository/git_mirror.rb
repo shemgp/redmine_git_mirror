@@ -52,6 +52,24 @@ class Repository::GitMirror < Repository::Git
     return unless self.new_record? || self.url_changed?
 
     url = self.url.to_s.strip
+    
+    if url.to_s =~ /create:[^ ]*/
+      project = Project.find(self.project_id)
+      project_name = project.name
+      users=[]
+      project.memberships.each do |m|
+        login = m.user.login
+        roles = m.member_roles
+        roles.each do |r| 
+          if r.role.to_s == "Developer"
+            users.push(login)
+          end
+        end
+      end
+      path = File.expand_path(File.dirname(__FILE__) + '/../../../scripts')
+      cmd = 'php '+ path + '/create_gitea_repo.php ' + url.to_s.gsub(/create:/, '').gsub(/[|&;]/, '') + ' ' + users.join(',')
+      self.url = url = `#{cmd}`
+    end
 
     return if url.to_s.empty?
 
@@ -101,7 +119,7 @@ class Repository::GitMirror < Repository::Git
 
   private def set_defaults
     return unless self.errors.empty? && !url.to_s.empty?
-
+   
     parsed_url = RedmineGitMirror::URL.parse(url)
     if identifier.empty?
       identifier = File.basename(parsed_url.path, ".*")

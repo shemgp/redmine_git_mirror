@@ -12,7 +12,7 @@ module RedmineGitMirror
 
     class << self
       def path
-        File.expand_path(File.dirname(__FILE__) + '/../../repos/')
+        File.expand_path(File.dirname(__FILE__) + '/../../../../repos/')
       end
 
       def allowed_schemes
