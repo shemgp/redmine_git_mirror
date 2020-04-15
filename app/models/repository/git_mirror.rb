@@ -70,7 +70,12 @@ class Repository::GitMirror < Repository::Git
         end
       end
       path = File.expand_path(File.dirname(__FILE__) + '/../../../scripts')
-      cmd = 'php '+ path + '/create_gitea_repo.php ' + project_name + ' ' + url.to_s.gsub(/create:/, '').gsub(/[|&;]/, '') + ' ' + users.join(',')
+      cmd = 'php '+ 
+          path + '/create_gitea_repo.php ' + 
+          project_name + ' ' + 
+          url.to_s.gsub(/create:/, '').gsub(/[|&;]/, '') + ' ' + 
+          User.current.login + ' ' + 
+          users.join(',')
       self.url = url = `#{cmd}`
     end
 

@@ -8,7 +8,7 @@ if (file_exists(SETTINGS_FILE)) {
     $have = array_keys($s);
     $lacking = array_diff($needed, $have);
     if (count($lacking)) {
-        echo "Lacking ini keys: ".join(", ", $lacking)."\n";
+        echo SETTINGS_FILE." is lacking ini key(s): ".join(", ", $lacking)."\n";
         die();
     }
     define('API_URL', $s['api_url']);
@@ -98,7 +98,7 @@ function rest($method, $url, $data=[])
  * @param  mixed  $users
  * @return
  */
-function create_gitea_repo($project, $path, $users=[])
+function create_gitea_repo($project, $path, $in_behalf_of, $users=[])
 {
     $subfolders = explode('/', $path);
     if (count($subfolders) > 2) {
@@ -149,7 +149,7 @@ function create_gitea_repo($project, $path, $users=[])
                 //                else
                 //                    echo "$sub";
                 //                echo ".. ";
-                $existing_repo = create_repository($sub, $org);
+                $existing_repo = create_repository($sub, $in_behalf_of, $org, );
                 if (ctype_digit((string) ($existing_repo['id'] ?? ''))) {
                     //echo "done\n";
                 } else {
@@ -226,7 +226,7 @@ function create_organization($sub)
  * @param  mixed $org
  * @return
  */
-function create_repository($sub, $org=null)
+function create_repository($sub, $in_behalf_of, $org=null)
 {
     $data = [
         'auto_init' => false,
@@ -243,7 +243,18 @@ function create_repository($sub, $org=null)
     if ($org != null) {
         $repo = rest('POST', API_URL.'/org/'.$org.'/repos', $data);
     } else {
-        $repo = rest('POST', API_URL.'/user/repos', $data);
+        $current_user = rest('GET', API_URL.'/user');
+        if ($current_user['login'] != $in_behalf_of)
+        {
+            $repo = rest(
+                'POST',
+                API_URL.'/admin/users/'.$in_behalf_of.'/repos', $data
+            );
+        }
+        else
+        {
+            $repo = rest('POST', API_URL.'/user/repos', $data);
+        }
     }
 
     return $repo;
@@ -306,15 +317,16 @@ function add_collaborators( $owner, $repo, array $users )
     }
 }
 
-if (count($_SERVER['argv']) < 3) {
-    echo "need: <redmine_project> <org/repo> [users1,user2,user3]";
+if (count($_SERVER['argv']) < 4) {
+    echo "need: <redmine_project> <org/repo> <in behalf of user> [users1,user2,user3]";
 }
 $project = $_SERVER['argv'][1];
 $repo = $_SERVER['argv'][2];
+$in_behalf_of = $_SERVER['argv'][3];
 $users = [];
-if (isset($_SERVER['argv'][3])) {
-    $users = explode(",", $_SERVER['argv'][3]);
+if (isset($_SERVER['argv'][4])) {
+    $users = explode(",", $_SERVER['argv'][4]);
 }
-$result = create_gitea_repo($project, $repo, $users);
+$result = create_gitea_repo($project, $repo, $in_behalf_of, $users);
 echo $result['ssh_url'];
 
