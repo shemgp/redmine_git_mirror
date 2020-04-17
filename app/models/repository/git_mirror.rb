@@ -55,7 +55,7 @@ class Repository::GitMirror < Repository::Git
     
     if url.to_s =~ /create:[^ ]*/
       project = Project.find(self.project_id)
-      project_name = project.name
+      project_name = project.identifier
       users=[]
       project.memberships.each do |m|
         if m.user.nil?
@@ -76,6 +76,7 @@ class Repository::GitMirror < Repository::Git
           url.to_s.gsub(/create:/, '').gsub(/[|&;]/, '') + ' ' + 
           User.current.login + ' ' + 
           users.join(',')
+      Rails.logger.warn "Running: #{cmd}"
       self.url = url = `#{cmd}`
     end
 
