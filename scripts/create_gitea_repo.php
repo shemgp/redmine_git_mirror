@@ -121,9 +121,17 @@ function create_gitea_repo($project, $path, $in_behalf_of, $users=[])
                     //echo "done\n";
                     $org = $sub;
                 } else {
-                    //echo 'Error: ';
-                    var_dump($result);
-                    die();
+                    if (isset($result['message']) && preg_match("/user already exists/", $result['message']))
+                    {
+                        $in_behalf_of = $sub;
+                        $org = null;
+                    }
+                    else
+                    {
+                        //echo 'Error: ';
+                        var_dump($result);
+                        die();
+                    }
                 }
             } else {
                 $existing_repos = rest('GET', API_URL.'/orgs/'.$sub.'/repos');
@@ -149,7 +157,7 @@ function create_gitea_repo($project, $path, $in_behalf_of, $users=[])
                 //                else
                 //                    echo "$sub";
                 //                echo ".. ";
-                $existing_repo = create_repository($sub, $in_behalf_of, $org, );
+                $existing_repo = create_repository($sub, $in_behalf_of, $org);
                 if (ctype_digit((string) ($existing_repo['id'] ?? ''))) {
                     //echo "done\n";
                 } else {
@@ -318,7 +326,8 @@ function add_collaborators( $owner, $repo, array $users )
 }
 
 if (count($_SERVER['argv']) < 4) {
-    echo "need: <redmine_project> <org/repo> <in behalf of user> [users1,user2,user3]";
+    echo "need: <redmine_project> <org/repo> <in behalf of user> [users1,user2,user3]\n";
+    die();
 }
 $project = $_SERVER['argv'][1];
 $repo = $_SERVER['argv'][2];
