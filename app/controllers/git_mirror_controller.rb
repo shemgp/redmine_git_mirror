@@ -36,6 +36,8 @@ class GitMirrorController < ActionController::Base
       urls.push(url) if url.length > 0
     end
 
+    logger.info "webhook: " + urls.inspect
+
     if urls.length <= 0
       head 422
       return

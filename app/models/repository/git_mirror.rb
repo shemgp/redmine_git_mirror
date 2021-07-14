@@ -52,6 +52,7 @@ class Repository::GitMirror < Repository::Git
     return unless self.new_record? || self.url_changed?
 
     url = self.url.to_s.strip
+    Rails.logger.error "Found: #{self.url}"
     
     if url.to_s =~ /create:[^ ]*/
       project = Project.find(self.project_id)
